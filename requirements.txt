@@ -1,0 +1,26 @@
+# 本番環境用依存関係
+# Python 3.12以上が必要
+
+# FastAPI関連
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# データベースORM
+sqlmodel>=0.0.14
+
+# PostgreSQLドライバー
+psycopg2-binary>=2.9.9
+
+# データ検証・設定管理
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# YAML設定ファイルサポート
+pyyaml>=6.0.1
+
+# ログライブラリ
+loguru>=0.7.2
+
+# ファイルアップロード対応
+python-multipart>=0.0.6
+

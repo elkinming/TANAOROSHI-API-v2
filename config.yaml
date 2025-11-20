@@ -1,0 +1,55 @@
+# 共通設定ファイル
+# 全環境で共通の設定をここに記述します
+# 環境ごとに異なる設定は config.{environment}.yaml に記述してください
+# 
+# 設定のマージ順序:
+# 1. config.yaml（このファイル）- 共通設定
+# 2. config.{environment}.yaml - 環境固有設定（共通設定を上書き）
+
+# 実行環境（環境固有設定ファイルで上書き可能）
+# デフォルトはローカル開発環境
+environment: local
+
+# API設定
+api:
+  title: "Tanaoroshi Backend API"
+  version: "0.1.0"
+  description: "RESTful API バックエンドサービス"
+  debug: false
+  root_path: "/j0503015/api/001"
+
+# サーバー設定
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+# データベース設定は各環境の設定ファイル（config.{environment}.yaml）で設定します
+# database:
+#   url: "postgresql://user:password@host:5432/dbname"
+#   echo: false
+#   pool_pre_ping: true
+#   pool_size: 10
+#   max_overflow: 20
+
+# ログ設定
+log:
+  level: "INFO"
+  file: /release/logs/app.log
+  max_bytes: 10485760  # ログファイルの最大サイズ（バイト）、例: 10485760 (10MB)
+  backup_count: 10  # 保持するバックアップファイル数
+  when: "D"  # 日付ベースローテーション間隔（'D'=日次、'H'=時間、'midnight'=日次深夜）
+
+# CORS設定
+cors:
+  origins:
+    - "*"
+  allow_credentials: true
+  allow_methods:
+    - "*"
+  allow_headers:
+    - "*"
+
+# プロジェクト設定
+project:
+  name: "tanaoroshi-backend"
+

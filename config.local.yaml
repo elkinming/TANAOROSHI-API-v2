@@ -1,0 +1,57 @@
+# ローカル開発環境固有設定ファイル
+# 
+# このファイルにはローカル開発環境でのみ異なる設定を記述します
+# 共通設定は config.yaml に記述してください
+# 
+# 設定のマージ:
+# - config.yaml の設定が先に読み込まれます
+# - このファイルの設定が config.yaml の設定を上書きします
+# 
+# 注意: local環境はローカルマシン上での開発用です
+# AWSクラウド上の環境（dev/staging/prod）とは異なります
+
+# 実行環境
+environment: local
+
+# API設定
+api:
+  title: "Tanaoroshi Backend API (Local)"
+  version: "0.1.0"
+  description: "RESTful API バックエンドサービス - ローカル開発環境"
+  debug: true
+
+# サーバー設定
+server:
+  host: "127.0.0.1"  # ローカルホストのみ
+  port: 8080
+
+# データベース設定（PostgreSQL）
+database:
+  url: "postgresql://atum:ALGkG5Muz8$2@db.hoyutech.work:25432/atum-feature"
+  echo: true  # SQLクエリをログに出力（開発時に便利）
+  pool_pre_ping: true  # 接続の有効性を確認
+  pool_size: 10  # 接続プールサイズ
+  max_overflow: 20  # 最大オーバーフロー
+
+# ログ設定
+log:
+  level: "DEBUG"  # ローカル開発では詳細なログを出力
+  file: "logs/app.log"  # プロジェクトパス下のlogsフォルダに出力
+  max_bytes: 10485760  # 10MBでローテーション
+  backup_count: 5  # 5つのバックアップファイルを保持
+  when: null  # サイズベースのローテーションを使用
+
+# CORS設定（ローカル開発ではすべて許可）
+cors:
+  origins:
+    - "*"
+  allow_credentials: true
+  allow_methods:
+    - "*"
+  allow_headers:
+    - "*"
+
+# プロジェクト設定
+project:
+  name: "tanaoroshi-backend-local"
+
