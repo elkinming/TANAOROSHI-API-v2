@@ -5,7 +5,7 @@
 """
 from datetime import date
 from typing import Optional, List, Dict, Any
-from sqlalchemy import or_
+from sqlalchemy import or_, cast, String
 from sqlalchemy.exc import IntegrityError, DataError, DatabaseError
 from sqlmodel import Session, select
 from fastapi import HTTPException, status
@@ -58,8 +58,8 @@ class InventoryRepository:
                     KoujyouMaster.previous_factory_code.ilike(like),
                     KoujyouMaster.company_code.ilike(like),
                     KoujyouMaster.product_factory_code.ilike(like),
-                    KoujyouMaster.start_operation_date.ilike(like),
-                    KoujyouMaster.end_operation_date.ilike(like),
+                    cast(KoujyouMaster.start_operation_date, String).ilike(like),
+                    cast(KoujyouMaster.end_operation_date, String).ilike(like),
                     KoujyouMaster.previous_factory_name.ilike(like),
                     KoujyouMaster.product_factory_name.ilike(like),
                     KoujyouMaster.material_department_code.ilike(like),
