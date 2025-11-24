@@ -27,7 +27,8 @@ server:
 
 # データベース設定（PostgreSQL）
 database:
-  url: "postgresql://atum:ALGkG5Muz8$2@db.hoyutech.work:25432/atum-feature"
+  # url: "postgresql://atum:ALGkG5Muz8$2@db.hoyutech.work:25432/atum-feature"
+  url: "postgresql://postgres:Elkinpg1@localhost:5432/koujyou_db"
   echo: true  # SQLクエリをログに出力（開発時に便利）
   pool_pre_ping: true  # 接続の有効性を確認
   pool_size: 10  # 接続プールサイズ

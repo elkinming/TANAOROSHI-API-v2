@@ -1,0 +1,47 @@
+Inventory/Koujyou Master Terms Glossary
+========================================
+
+Japanese (Kanji)          | Japanese (Kana)                    | English
+---------------------------|------------------------------------|----------------------------------
+工場マスタ                 | こうじょうマスタ                    | Factory Master
+工場マスタ一覧             | こうじょうマスタいちらん            | Factory Master List
+工場マスタのリスト         | こうじょうマスタのリスト            | Factory Master List
+従来工場コード             | じゅうらいこうじょうコード          | Previous Factory Code
+商品工場コード             | しょうひんこうじょうコード          | Product Factory Code
+会社コード                 | かいしゃコード                      | Company Code
+運用開始日                 | うんようかいしび                    | Start Operation Date
+運用終了日                 | うんようしゅうりょうび              | End Operation Date
+従来工場名                 | じゅうらいこうじょうめい            | Previous Factory Name
+商品工場名                 | しょうひんこうじょうめい            | Product Factory Name
+マテリアル部署コード       | マテリアルぶしょコード              | Material Department Code
+環境情報                   | かんきょうじょうほう                | Environmental Information
+認証フラグ                 | にんしょうフラグ                    | Authentication Flag
+企業コード                 | きぎょうコード                      | Group Corporate Code
+連携パターン               | れんけいパターン                    | Integration Pattern
+HULFTID                    | HULFTID                             | HULFTID
+全カラムで曖昧検索         | ぜんカラムであいまいけんさく        | Fuzzy Search Across All Columns
+フィルタ                   | フィルタ                            | Filter
+オプション                 | オプション                          | Option
+サービスインスタンス       | サービスインスタンス                | Service Instance
+一覧を取得                 | いちらんをしゅとく                  | Get List/Retrieve List
+リストを取得               | リストをしゅとく                    | Retrieve List
+作成                       | さくせい                            | Create
+作成する                   | さくせいする                        | To Create
+取得する                   | しゅとくする                        | To Retrieve/To Get
+主キー                     | しゅキー                            | Primary Key
+複合キー                   | ふくごうキー                        | Composite Key
+基本情報                   | きほんじょうほう                    | Basic Information
+旧コード情報               | きゅうコードじょうほう              | Old Code Information
+国際化情報                 | こくさいかじょうほう                | Internationalization Information
+登録情報                   | とうろくじょうほう                  | Registration Information
+更新情報                   | おうしんじょうほう                  | Update Information
+データ                     | データ                              | Data
+レコード                   | レコード                            | Record
+エンドポイント             | エンドポイント                      | Endpoint
+API                        | API                                 | API
+リポジトリ                 | リポジトリ                          | Repository
+サービス                   | サービス                            | Service
+スキーマ                   | スキーマ                            | Schema
+モデル                     | モデル                              | Model
+テーブル                   | テーブル                            | Table
+

@@ -32,16 +32,16 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """
     アプリケーションのライフサイクル管理
-    
+
     Args:
         app: FastAPIアプリケーションインスタンス
     """
     # 起動時の処理
     logger.info(f"アプリケーション起動: {settings.api_title} v{settings.api_version}")
     logger.info(f"環境: {settings.environment.value}")
-    
+
     yield
-    
+
     # 終了時の処理
     logger.info("アプリケーション終了")
 
@@ -78,7 +78,7 @@ app.include_router(api_router)
 async def health_check():
     """
     ヘルスチェックエンドポイント
-    
+
     Returns:
         dict: アプリケーションの状態
     """
@@ -93,7 +93,7 @@ async def health_check():
 async def root():
     """
     ルートエンドポイント
-    
+
     Returns:
         dict: API情報
     """
