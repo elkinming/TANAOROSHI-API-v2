@@ -103,3 +103,11 @@ class SuccessMessage:
     # CUSTOM_MASTER_UPDATED = "得意先マスタを更新しました"
     # CUSTOM_MASTER_DELETED = "得意先マスタを削除しました"
 
+    # ユーザー関連成功メッセージ
+    USER_CREATED = "ユーザーを作成しました"
+    USER_UPDATED = "ユーザーを更新しました"
+    USER_LIST_RETRIEVED = "ユーザーの取得が完了しました"
+    USER_BATCH_CREATED = "ユーザーを一括作成しました"
+    USER_BATCH_UPDATED = "ユーザーを一括更新しました"
+    USER_BATCH_DELETED = "ユーザーを一括削除しました"
+

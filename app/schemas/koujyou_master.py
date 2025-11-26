@@ -11,11 +11,11 @@ T = TypeVar('T')
 
 class KoujyouMasterBase(BaseModel):
     """得意先マスタの基本スキーマ"""
-    company_code: str = Field(max_length=100, primary_key=True, description="会社コード")
-    previous_factory_code: str = Field(max_length=100, primary_key=True, description="従来工場コード")
-    product_factory_code: str = Field(max_length=100, primary_key=True, description="商品工場コード")
-    start_operation_date: date = Field(primary_key=True, description="運用開始日")
-    end_operation_date: date = Field(primary_key=True, description="運用終了日")
+    company_code: str = Field(max_length=100, description="会社コード")
+    previous_factory_code: str = Field(max_length=100, description="従来工場コード")
+    product_factory_code: str = Field(max_length=100, description="商品工場コード")
+    start_operation_date: date = Field(description="運用開始日")
+    end_operation_date: date = Field(description="運用終了日")
     previous_factory_name: Optional[str] = Field(default=None, max_length=100, description="従来工場名")
     product_factory_name: Optional[str] = Field(default=None, max_length=100, description="商品工場名")
     material_department_code: Optional[str] = Field(default=None, max_length=100, description="マテリアル部署コード")

@@ -24,3 +24,7 @@ loguru>=0.7.2
 # ファイルアップロード対応
 python-multipart>=0.0.6
 
+# テスト関連（開発・テスト環境用）
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
