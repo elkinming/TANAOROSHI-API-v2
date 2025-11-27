@@ -10,7 +10,12 @@ from sqlmodel import Session
 from app.database import get_session
 from app.services.custom_master_service import CustomMasterService
 from app.services.inventory_service import InventoryService
-from app.schemas.koujyou_master import KoujyouMasterBase, KoujyouMasterResponse
+from app.schemas.koujyou_master import (
+    KoujyouMasterBase,
+    KoujyouMasterResponse,
+    CheckIntegrityRequest,
+    CheckIntegrityResponse
+)
 from app.schemas.custom_master import (
     CustomMasterCreate,
     CustomMasterUpdate,
@@ -285,6 +290,54 @@ async def delete_multiple_koujyou_master(
     return ApiResponse.success(
         data=result,
         message=SuccessMessage.KOUJYOU_MASTER_BATCH_DELETED
+    )
+
+
+@router.post(
+    "/record/check-integrity",
+    response_model=ApiResponse[CheckIntegrityResponse],
+    summary="整合性チェック",
+    description="レコードの整合性をチェックします"
+)
+async def check_integrity(
+    request_data: KoujyouMasterBase,
+    response: Response,
+    pk_check: Optional[bool] = Query(default=True, description="プライマリキーチェック"),
+    datatype_check: Optional[bool] = Query(default=True, description="データタイプチェック"),
+    time_logic_check: Optional[bool] = Query(default=True, description="時間ロジックチェック"),
+    service: InventoryService = Depends(get_service)
+) -> ApiResponse[CheckIntegrityResponse]:
+    """
+    レコードの整合性をチェックする
+
+    Args:
+        request_data: チェック対象のレコード
+        pk_check: プライマリキーチェック
+        datatype_check: データタイプチェック
+        time_logic_check: 時間ロジックチェック
+        service: サービスインスタンス
+
+    Returns:
+        ApiResponse[CheckIntegrityResponse]: 整合性チェック結果
+    """
+    result = service.check_integrity(
+        koujyou_master_data=request_data,
+        pk_check=pk_check,
+        datatype_check=datatype_check,
+        time_logic_check=time_logic_check
+    )
+
+    if len(result.error_codes) > 0:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return ApiResponse.success(
+            message="整合性チェックが正常に完了しませんでした",
+            code=status.HTTP_400_BAD_REQUEST,
+            data=result
+        )
+
+    return ApiResponse.success(
+        data=result,
+        message="整合性チェックが正常に完了しました"
     )
 
 

@@ -73,6 +73,35 @@ class InventoryRepository:
 
         return list(self.session.exec(statement).all())
 
+    def __init__(self, session: Session):
+        """
+        リポジトリを初期化する
+
+        Args:
+            session: データベースセッション
+        """
+        self.session = session
+
+    def get_time_related_records( self, koujyou_master_data ) -> List[KoujyouMaster]:
+        """
+        時間関連の工場マスタレコードを取得する
+
+        指定された工場マスタデータと同じ工場コード（従来工場コード、商品工場コード）と
+        会社コードを持つ全てのレコードを取得します。時間ロジックチェックなどで使用されます。
+
+        Args:
+            koujyou_master_data (KoujyouMasterBase): 基準となる工場マスタデータ
+
+        Returns:
+            List[KoujyouMaster]: 同じ工場コードと会社コードを持つ工場マスタレコードのリスト
+        """
+        statement = select(KoujyouMaster).where(
+            KoujyouMaster.previous_factory_code == koujyou_master_data.previous_factory_code,
+            KoujyouMaster.product_factory_code == koujyou_master_data.product_factory_code,
+            KoujyouMaster.company_code == koujyou_master_data.company_code
+        )
+
+        return list(self.session.exec(statement).all())
 
     def get_by_unique_keys(self, koujyou_master_data) -> Optional["KoujyouMaster"]:
         """

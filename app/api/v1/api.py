@@ -11,11 +11,11 @@ from app.api.v1.endpoints import user
 api_router = APIRouter()
 
 # 得意先マスタAPIを追加
-api_router.include_router(custom_master.router)
+# api_router.include_router(custom_master.router)
 
 # 工場マスタAPIを追加
 api_router.include_router(inventory.router)
 
 # ユーザーAPIを追加
-api_router.include_router(user.router)
+# api_router.include_router(user.router)
 

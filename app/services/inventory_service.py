@@ -4,13 +4,18 @@
 工場マスタに関するビジネスロジック処理
 """
 from datetime import date
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, get_type_hints
 from sqlmodel import Session
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError, DataError, DatabaseError
 from app.repositories.custom_master_repository import CustomMasterRepository
 from app.repositories.inventory_repository import InventoryRepository
-from app.schemas.koujyou_master import KoujyouMasterBase, KoujyouMasterResponse
+from app.models.koujyou_master import KoujyouMaster
+from app.schemas.koujyou_master import (
+    KoujyouMasterBase,
+    KoujyouMasterResponse,
+    CheckIntegrityResponse
+)
 from app.schemas.custom_master import (
     CustomMasterCreate,
     CustomMasterUpdate,
@@ -373,7 +378,197 @@ class InventoryService:
                 detail="工場マスタの一括削除中にエラーが発生しました"
             )
 
+    def check_integrity(
+        self,
+        koujyou_master_data: KoujyouMasterBase,
+        pk_check: bool,
+        datatype_check: bool,
+        time_logic_check: bool
+    ) -> CheckIntegrityResponse:
+        """
+        レコードの整合性をチェックする
 
+        Args:
+            koujyou_master_data: チェック対象のレコード
+            pk_check: プライマリキーチェック
+            datatype_check: データタイプチェック
+            time_logic_check: 時間ロジックチェック
+
+        Returns:
+            CheckIntegrityResponse: 整合性チェック結果
+        """
+        logger.info(
+            f"整合性チェック開始: record={koujyou_master_data}, "
+            f"pk_check={pk_check}, datatype_check={datatype_check}, time_logic_check={time_logic_check}"
+        )
+
+        try:
+            print(f"record: {koujyou_master_data}")
+            print(f"pk_check: {pk_check}")
+            print(f"datatype_check: {datatype_check}")
+            print(f"time_logic_check: {time_logic_check}")
+
+            response = CheckIntegrityResponse(
+                error_codes=[],
+                error_messages=[]
+            )
+
+            if pk_check:
+                existing = self.repository.get_by_unique_keys(koujyou_master_data)
+                if existing:
+                    response.error_codes.append("PK_CHECK_FAILED")
+                    response.error_messages.append("プライマリキーが存在しません")
+
+            if datatype_check:
+                self._validate_datatypes(koujyou_master_data, response)
+
+            if time_logic_check:
+                self._validate_time_logic(koujyou_master_data, response)
+
+
+
+            return response
+
+        except Exception as e:
+            logger.error(f"整合性チェックエラー: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="整合性チェック中にエラーが発生しました"
+            )
+
+    def _validate_datatypes(
+        self,
+        koujyou_master_data: KoujyouMasterBase,
+        response: CheckIntegrityResponse
+    ) -> None:
+        """
+        データタイプを検証する
+
+        Args:
+            koujyou_master_data: 検証対象のレコード
+            response: エラーレスポンスオブジェクト（エラーを追加する）
+        """
+        # モデルのフィールド定義を取得
+        model_fields = KoujyouMaster.model_fields
+        model_type_hints = get_type_hints(KoujyouMaster, include_extras=True)
+
+        # データのフィールドを取得
+        data_dict = koujyou_master_data.model_dump()
+
+        for field_name, field_info in model_fields.items():
+            # データにフィールドが存在するか確認
+            if field_name not in data_dict:
+                continue
+
+            value = data_dict[field_name]
+            expected_type = model_type_hints.get(field_name)
+
+            # max_lengthを取得（metadataから）
+            max_length = None
+            if hasattr(field_info, 'metadata') and field_info.metadata:
+                for meta in field_info.metadata:
+                    # metadataにはMaxLenオブジェクトが含まれる
+                    if hasattr(meta, 'max_length'):
+                        max_length = meta.max_length
+                        break
+
+            # None値の処理（Optionalフィールドの場合）
+            if value is None:
+                # Optional型の場合はNoneが許可されている
+                if expected_type:
+                    type_str = str(expected_type)
+                    # Optional[Type] や Union[Type, None] の場合はNoneが許可されている
+                    if 'Optional' in type_str or 'Union' in type_str:
+                        continue  # Noneは許可されている
+                    else:
+                        # Noneが許可されていない型でNoneが来た場合
+                        response.error_codes.append(f"DATATYPE_CHECK_FAILED_{field_name.upper()}")
+                        response.error_messages.append(
+                            f"フィールド '{field_name}' はNoneを許可していませんが、Noneが設定されています"
+                        )
+                continue
+
+            # 型チェック
+            type_mismatch = False
+            expected_type_str = ""
+            actual_type_str = type(value).__name__
+
+            # 型の判定（Union/Optionalの処理）
+            actual_expected_type = expected_type
+            if hasattr(expected_type, '__origin__'):
+                # Union[str, None] や Optional[str] の場合
+                if expected_type.__origin__ is not type(None):
+                    # Unionの引数からNone以外の型を取得
+                    args = expected_type.__args__
+                    if args:
+                        # None以外の型を探す
+                        actual_expected_type = next((arg for arg in args if arg is not type(None)), args[0])
+
+            # date型のチェック
+            if actual_expected_type == date:
+                if not isinstance(value, date):
+                    type_mismatch = True
+                    expected_type_str = "date"
+
+            # str型のチェック
+            elif actual_expected_type == str:
+                if not isinstance(value, str):
+                    type_mismatch = True
+                    expected_type_str = "str"
+                else:
+                    # 文字列の長さチェック
+                    if max_length and len(value) > max_length:
+                        response.error_codes.append(f"DATATYPE_CHECK_FAILED_{field_name.upper()}_LENGTH")
+                        response.error_messages.append(
+                            f"フィールド '{field_name}' の長さが最大値 {max_length} を超えています（実際: {len(value)}）"
+                        )
+
+            # その他の型（未対応の型）
+            else:
+                # 基本的な型チェック
+                if not isinstance(value, actual_expected_type):
+                    type_mismatch = True
+                    expected_type_str = str(actual_expected_type)
+
+            # 型の不一致がある場合
+            if type_mismatch:
+                response.error_codes.append(f"DATATYPE_CHECK_FAILED_{field_name.upper()}")
+                response.error_messages.append(
+                    f"フィールド '{field_name}' の型が一致しません。期待: {expected_type_str}, 実際: {actual_type_str}"
+                )
+
+    def _validate_time_logic(
+        self,
+        koujyou_master_data: KoujyouMasterBase,
+        response: CheckIntegrityResponse
+    ) -> None:
+        """
+        時間ロジックを検証する
+        """
+        if koujyou_master_data.start_operation_date >= koujyou_master_data.end_operation_date:
+            response.error_codes.append("TIME_LOGIC_CHECK_FAILED")
+            response.error_messages.append("運用開始日が運用終了日より後です")
+            return
+
+        logger.info(f"時間ロジックチェック開始: {koujyou_master_data.company_code} / {koujyou_master_data.previous_factory_code} / {koujyou_master_data.product_factory_code} / {koujyou_master_data.start_operation_date} / {koujyou_master_data.end_operation_date}")
+        time_related_records = self.repository.get_time_related_records(koujyou_master_data)
+        logger.info(f"時間ロジックチェック結果: {len(time_related_records)}件")
+        if time_related_records:
+            n_start = koujyou_master_data.start_operation_date
+            n_end = koujyou_master_data.end_operation_date
+            for record in time_related_records:
+                r_start = record.start_operation_date
+                r_end = record.end_operation_date
+                if (
+                    (n_start < r_start and n_start < r_end and n_end < r_start and n_end < r_end)
+                    or
+                    (n_start > r_start and n_start > r_end and n_end > r_start and n_end > r_end)
+
+                ):
+                    logger.info(f"時間ロジックが一致します: {record.company_code} / {record.previous_factory_code} / {record.product_factory_code} / {record.start_operation_date} / {record.end_operation_date}")
+                else:
+                    response.error_codes.append("TIME_LOGIC_CHECK_FAILED")
+                    response.error_messages.append(f"時間ロジックが一致しません: {record.company_code} / {record.previous_factory_code} / {record.product_factory_code} / {record.start_operation_date} / {record.end_operation_date}")
 
     # def create_custom_master(
     #     self,

@@ -43,3 +43,14 @@ class CommitRecordErrorBase(BaseModel, Generic[T]):
 class CommitRecordErrorResponse(CommitRecordErrorBase):
     """得意先マスタレスポンススキーマ"""
     model_config = {"from_attributes": True}
+
+
+class CheckIntegrityRequest(BaseModel):
+    """整合性チェックリクエストスキーマ"""
+    record: KoujyouMasterBase = Field(..., description="チェック対象のレコード")
+
+
+class CheckIntegrityResponse(BaseModel):
+    """整合性チェックレスポンススキーマ"""
+    error_codes: list[str] = Field(default_factory=list, description="エラーコードリスト")
+    error_messages: list[str] = Field(default_factory=list, description="エラーメッセージリスト")
