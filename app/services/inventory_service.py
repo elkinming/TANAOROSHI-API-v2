@@ -4,7 +4,7 @@
 工場マスタに関するビジネスロジック処理
 """
 from datetime import date
-from typing import Optional, List, Dict, Any, get_type_hints
+from typing import Optional, List, Dict, Any, get_type_hints, Union
 from sqlmodel import Session
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError, DataError, DatabaseError
@@ -26,6 +26,19 @@ from app.utils.logger import get_logger
 
 
 logger = get_logger(__name__)
+
+
+def _format_pk_details(record: Union[KoujyouMasterBase, KoujyouMaster]) -> str:
+    """
+    プライマリキー詳細をフォーマットする
+
+    Args:
+        record: レコードオブジェクト（KoujyouMasterBaseまたはKoujyouMaster）
+
+    Returns:
+        str: フォーマットされたプライマリキー詳細文字列
+    """
+    return f"{record.company_code} / {record.previous_factory_code} / {record.product_factory_code} / {record.start_operation_date} / {record.end_operation_date}"
 
 
 class InventoryService:
@@ -383,7 +396,9 @@ class InventoryService:
         koujyou_master_data: KoujyouMasterBase,
         pk_check: bool,
         datatype_check: bool,
-        time_logic_check: bool
+        time_logic_check: bool,
+
+
     ) -> CheckIntegrityResponse:
         """
         レコードの整合性をチェックする
@@ -408,9 +423,12 @@ class InventoryService:
             print(f"datatype_check: {datatype_check}")
             print(f"time_logic_check: {time_logic_check}")
 
+            pk_detail = _format_pk_details(koujyou_master_data)
             response = CheckIntegrityResponse(
                 error_codes=[],
-                error_messages=[]
+                error_messages=[],
+                pk_detail=pk_detail,
+                error_data=[]
             )
 
             if pk_check:
@@ -418,6 +436,7 @@ class InventoryService:
                 if existing:
                     response.error_codes.append("PK_CHECK_FAILED")
                     response.error_messages.append("プライマリキーが存在しません")
+                    response.error_data.append({})
 
             if datatype_check:
                 self._validate_datatypes(koujyou_master_data, response)
@@ -478,14 +497,21 @@ class InventoryService:
                 if expected_type:
                     type_str = str(expected_type)
                     # Optional[Type] や Union[Type, None] の場合はNoneが許可されている
-                    if 'Optional' in type_str or 'Union' in type_str:
+                    if 'None' in type_str:
                         continue  # Noneは許可されている
                     else:
                         # Noneが許可されていない型でNoneが来た場合
-                        response.error_codes.append(f"DATATYPE_CHECK_FAILED_{field_name.upper()}")
+                        response.error_codes.append("DATATYPE_CHECK_FAILED")
                         response.error_messages.append(
                             f"フィールド '{field_name}' はNoneを許可していませんが、Noneが設定されています"
                         )
+                        error_dict = {
+                            "field_name": field_name,
+                            "max_length": None,
+                            "expected_type_str": str(expected_type) if expected_type else None,
+                            "actual_type_str": "None"
+                        }
+                        response.error_data.append(error_dict)
                 continue
 
             # 型チェック
@@ -518,10 +544,18 @@ class InventoryService:
                 else:
                     # 文字列の長さチェック
                     if max_length and len(value) > max_length:
-                        response.error_codes.append(f"DATATYPE_CHECK_FAILED_{field_name.upper()}_LENGTH")
+                        response.error_codes.append("DATATYPE_CHECK_FAILED_LENGTH")
                         response.error_messages.append(
                             f"フィールド '{field_name}' の長さが最大値 {max_length} を超えています（実際: {len(value)}）"
                         )
+                        error_dict = {
+                            "field_name": field_name,
+                            "max_length": str(max_length),
+                            "expected_type_str": "str",
+                            "actual_type_str": "str",
+                            "actual_length": str(len(value))
+                        }
+                        response.error_data.append(error_dict)
 
             # その他の型（未対応の型）
             else:
@@ -532,10 +566,17 @@ class InventoryService:
 
             # 型の不一致がある場合
             if type_mismatch:
-                response.error_codes.append(f"DATATYPE_CHECK_FAILED_{field_name.upper()}")
+                response.error_codes.append("DATATYPE_CHECK_FAILED")
                 response.error_messages.append(
                     f"フィールド '{field_name}' の型が一致しません。期待: {expected_type_str}, 実際: {actual_type_str}"
                 )
+                error_dict = {
+                    "field_name": field_name,
+                    "max_length": str(max_length) if max_length else None,
+                    "expected_type_str": expected_type_str,
+                    "actual_type_str": actual_type_str
+                }
+                response.error_data.append(error_dict)
 
     def _validate_time_logic(
         self,
@@ -546,8 +587,10 @@ class InventoryService:
         時間ロジックを検証する
         """
         if koujyou_master_data.start_operation_date >= koujyou_master_data.end_operation_date:
-            response.error_codes.append("TIME_LOGIC_CHECK_FAILED")
+            response.error_codes.append("TIME_LOGIC_CHECK_INVALID")
             response.error_messages.append("運用開始日が運用終了日より後です")
+            pk_conflicted = _format_pk_details(koujyou_master_data)
+            response.error_data.append({"pk_conflicted": pk_conflicted})
             return
 
         logger.info(f"時間ロジックチェック開始: {koujyou_master_data.company_code} / {koujyou_master_data.previous_factory_code} / {koujyou_master_data.product_factory_code} / {koujyou_master_data.start_operation_date} / {koujyou_master_data.end_operation_date}")
@@ -567,9 +610,63 @@ class InventoryService:
                 ):
                     logger.info(f"時間ロジックが一致します: {record.company_code} / {record.previous_factory_code} / {record.product_factory_code} / {record.start_operation_date} / {record.end_operation_date}")
                 else:
-                    response.error_codes.append("TIME_LOGIC_CHECK_FAILED")
+                    response.error_codes.append("TIME_LOGIC_CHECK_CONFLICTED")
                     response.error_messages.append(f"時間ロジックが一致しません: {record.company_code} / {record.previous_factory_code} / {record.product_factory_code} / {record.start_operation_date} / {record.end_operation_date}")
+                    pk_conflicted = _format_pk_details(record)
+                    response.error_data.append({"pk_conflicted": pk_conflicted})
 
+
+    def check_integrity_2(
+        self,
+        koujyou_master_data: KoujyouMasterBase,
+        pk_check: bool,
+        datatype_check: bool,
+        time_logic_check: bool,
+    ) -> CheckIntegrityResponse:
+        """
+        Check the integrity of a record without datatype validations
+
+        Args:
+            koujyou_master_data: The record to check
+            pk_check: Primary key check
+            datatype_check: Datatype check
+            time_logic_check: Time logic check
+
+        Returns:
+            CheckIntegrityResponse: The integrity check result
+        """
+        logger.info(
+            f"Integrity check started: record={koujyou_master_data}, "
+            f"pk_check={pk_check}, time_logic_check={time_logic_check}"
+        )
+
+        try:
+            pk_detail = _format_pk_details(koujyou_master_data)
+            response = CheckIntegrityResponse(
+                error_codes=[],
+                error_messages=[],
+                pk_detail=pk_detail,
+                error_data=[]
+            )
+
+            if pk_check:
+                existing = self.repository.get_by_unique_keys(koujyou_master_data)
+                if existing:
+                    response.error_codes.append("PK_CHECK_FAILED")
+                    response.error_messages.append("Primary key already exists")
+                    response.error_data.append({})
+
+            if time_logic_check:
+                self._validate_time_logic(koujyou_master_data, response)
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Integrity check error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Integrity check error occurred"
+            )
     # def create_custom_master(
     #     self,
     #     custom_master_data: CustomMasterCreate

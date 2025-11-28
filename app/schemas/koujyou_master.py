@@ -4,7 +4,7 @@
 得意先マスタのAPIリクエスト/レスポンススキーマ定義
 """
 from datetime import date, datetime
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Optional, TypeVar, List, Dict
 from pydantic import BaseModel, Field
 
 T = TypeVar('T')
@@ -54,3 +54,5 @@ class CheckIntegrityResponse(BaseModel):
     """整合性チェックレスポンススキーマ"""
     error_codes: list[str] = Field(default_factory=list, description="エラーコードリスト")
     error_messages: list[str] = Field(default_factory=list, description="エラーメッセージリスト")
+    pk_detail: str = Field(default="", description="プライマリキー詳細")
+    error_data: List[Dict[str, Optional[str]]] = Field(default_factory=list, description="エラーデータリスト")
